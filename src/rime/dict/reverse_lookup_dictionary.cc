@@ -88,15 +88,31 @@ bool ReverseDb::Build(DictSettings* settings,
                       uint32_t dict_file_checksum) {
   LOG(INFO) << "building reversedb...";
   ReverseLookupTable rev_table;
-  int syllable_id = 0;
+  size_t num_syllables = syllabary.size();
+  vector<string> id_to_syllable(num_syllables);
+  SyllableId syllable_id = 0;
   for (const string& syllable : syllabary) {
-    auto it = vocabulary.find(syllable_id++);
-    if (it == vocabulary.end())
-      continue;
-    const auto& entries(it->second.entries);
-    for (const auto& e : entries) {
-      rev_table[e->text].insert(syllable);
+    id_to_syllable[syllable_id++] = syllable;
+  }
+  std::queue<const Vocabulary*> vocabulary_queue;
+  vocabulary_queue.push(&vocabulary);
+  while (!vocabulary_queue.empty()) {
+    const auto& curr_vocabulary = *(vocabulary_queue.front());
+    for (const auto& v : curr_vocabulary) {
+      const auto& curr_vocabulary_page = v.second;
+      for (const auto& curr_entry : curr_vocabulary_page.entries) {
+        vector<string> curr_syllables;
+        for (const auto& curr_syllable_id : curr_entry->code) {
+          if (curr_syllable_id < num_syllables)
+            curr_syllables.push_back(id_to_syllable[curr_syllable_id]);
+        }
+        rev_table[curr_entry->text].insert(boost::algorithm::join(curr_syllables, " "));
+      }
+      const auto& curr_next_level = curr_vocabulary_page.next_level;
+      if (curr_next_level)
+        vocabulary_queue.push(curr_next_level.get());
     }
+    vocabulary_queue.pop();
   }
   StringTableBuilder key_trie_builder;
   StringTableBuilder value_trie_builder;
@@ -107,7 +123,7 @@ bool ReverseDb::Build(DictSettings* settings,
   // save reverse lookup entries
   for (const auto& v : rev_table) {
     const string& key(v.first);
-    string value(boost::algorithm::join(v.second, " "));
+    string value(boost::algorithm::join(v.second, " | "));
     key_trie_builder.Add(key, 0.0, &key_ids[i]);
     value_trie_builder.Add(value, 0.0, &value_ids[i]);
     ++i;
