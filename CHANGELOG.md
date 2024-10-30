@@ -1,3 +1,13 @@
+<a name="1.11.3-0"></a>
+## [1.11.3-0](https://github.com/russell-liu/librime/compare/1.11.2...1.11.3-0) (2024-10-30)
+
+
+### Features
+
+* allow reverse lookup of multisyllabic words ([591b0d8](https://github.com/russell-liu/librime/commit/591b0d8))
+
+
+
 <a name="1.11.2"></a>
 ## [1.11.2](https://github.com/rime/librime/compare/1.11.1...1.11.2) (2024-04-27)
 
