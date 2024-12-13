@@ -18,6 +18,7 @@ class UniquifiedTranslation : public CacheTranslation {
     Uniquify();
   }
   virtual bool Next();
+  virtual an<Candidate> Peek();
 
  protected:
   bool Uniquify();
@@ -28,6 +29,11 @@ class UniquifiedTranslation : public CacheTranslation {
 
 bool UniquifiedTranslation::Next() {
   return CacheTranslation::Next() && Uniquify();
+}
+
+an<Candidate> UniquifiedTranslation::Peek() {
+  Uniquify();
+  return CacheTranslation::Peek();
 }
 
 static CandidateList::iterator find_text_match(const an<Candidate>& target,
@@ -43,7 +49,7 @@ static CandidateList::iterator find_text_match(const an<Candidate>& target,
 
 bool UniquifiedTranslation::Uniquify() {
   while (!exhausted()) {
-    auto next = Peek();
+    auto next = CacheTranslation::Peek();
     CandidateList::iterator previous =
         find_text_match(next, candidates_->begin(), candidates_->end());
     if (previous == candidates_->end()) {
